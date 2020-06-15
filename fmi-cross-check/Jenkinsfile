@@ -1,0 +1,67 @@
+pipeline {
+    agent {
+        label 'master'
+    }
+
+    stages {
+        stage('Setup') {
+            parallel {
+                stage('Hello') {
+                    steps {
+                        echo 'This is a local Jenkinsfile'
+                        echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
+                        echo "WORKSPACE: ${env.WORKSPACE}"
+                        sh 'pwd'
+                    }
+                }
+                stage('Clone fmi-cross-check') {
+                    steps {
+                        dir('fmi-cross-check') {
+                            git branch: 'master', url: 'https://github.com/AnHeuermann/fmi-cross-check'
+                        }
+                        sh "ls fmi-cross-check/"
+                        sh 'pwd'
+                    }
+                }
+                stage('Clone OpenModelicaBuildScripts-cross-check') {
+                    steps {
+                        dir('fmi-cross-check') {
+                            git branch: 'fmi-cross-check', url: 'https://github.com/AnHeuermann/OpenModelicaBuildScripts'
+                        }
+                        sh "ls fmi-cross-check/"
+                        sh 'pwd'
+                    }
+                }
+            }
+        }
+        stage('Compile FMUs') {
+            agent {
+                docker {
+                    image "openmodelica/openmodelica:nightly-minimal-1.16-dev-20200430"
+                    args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
+                }
+            }
+            steps {
+                sh "omc --version"
+                sh "ls /fmi-cross-check"
+            }
+        }
+        stage('Validate FMUs') {
+            agent {
+                docker {
+                    image "openmodelica:nightly-focal-1.16-dev"
+                    args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
+                }
+            }
+            steps {
+                dir('/fmi-cross-check') {
+                    sh "ls"
+                    sh "python3 -m fmpy.cross_check.validate_vendor_repo"
+                }
+            }
+        }
+        stage('Upload to GitHub') {
+            echo "Uploding to OpenModelica/fmi-cross-check"
+        }
+    }
+}
