@@ -1,0 +1,22 @@
+# Build with
+# $ docker build --tag anheuermann/fmpy:focal-fossa -f Dockerfile.fmpy.linux64 .
+FROM ubuntu:focal
+
+# Get rid of the warning: "debconf: unable to initialize frontend: Dialog"
+# https://github.com/moby/moby/issues/27988
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+# Get rid of the warning: "debconf: delaying package configuration, since apt-utils is not installed"
+RUN apt-get update \
+    && apt-get install -qy apt-utils
+
+# Install Python
+RUN apt-get update \
+    && apt-get install python3-pip -qy \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install PyFMI 
+# and it's missing dependency scipy
+RUN python3 -m pip install scipy \
+    && python3 -m pip install fmpy[complete]

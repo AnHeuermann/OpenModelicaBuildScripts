@@ -1,14 +1,6 @@
 # Build with
 # $ docker build --tag anheuermann/openmodelica:nightly-1.16-dev-focal -f Dockerfile.fmi-cross-check.linux64 .
-FROM ubuntu:focal
-
-# Get rid of the warning: "debconf: unable to initialize frontend: Dialog"
-# https://github.com/moby/moby/issues/27988
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-
-# Get rid of the warning: "debconf: delaying package configuration, since apt-utils is not installed"
-RUN apt-get update \
-    && apt-get install -qy apt-utils
+FROM anheuermann/fmpy:focal-fossa
 
 # Install OpenModelica nightly build
 RUN apt-get update \
@@ -17,7 +9,7 @@ RUN apt-get update \
     && echo "deb https://build.openmodelica.org/apt focal nightly" > /etc/apt/sources.list.d/openmodelica.list \
     && wget https://build.openmodelica.org/apt/openmodelica.asc -O- | apt-key add - \
     && apt-get update && apt-get upgrade && apt-get dist-upgrade \
-    && apt-get install -qy openmodelica omlib-modelica-3.2.2 \
+    && apt-get install -qy openmodelica omlib-modelica-4.0.0 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -26,15 +18,6 @@ RUN apt-get update \
     && apt install -qy git \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
-
-# Install Python
-RUN apt-get update \
-    && apt-get install python3-pip -qy \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
-# Install PyFMI
-RUN python3 -m pip install fmpy[complete]
 
 WORKDIR /data
 VOLUME ["/data"]

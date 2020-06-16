@@ -43,9 +43,7 @@ pipeline {
             }
             steps ('Prepare fmi-cross-check') {
                 sh "git --version"
-                dir('/fmi-cross-check') {
-                    sh "git clean -fdx"
-                }
+                sh "cd /fmi-cross-check && git clean -fdx"
                 sh "ls /fmi-cross-check"
                 sh "ls /OpenModelicaBuildScripts"
                 sh "ls /OpenModelicaBuildScripts/fmi-cross-check/"
@@ -82,7 +80,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             sh "cat /etc/os-release"
                             sh "omc --version"
-                            sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
+                            //sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
                         }
                     }
                 }
@@ -101,6 +99,7 @@ pipeline {
                     steps {
                         sh "cat /etc/os-release"
                         sh "omc --version"
+                        sh "find /fmi-cross-check/fmus -name *.fmu | grep \"OpenModelica\""
                         sh "make -C /fmi-cross-check/ validate-files"
                     }
                 }
@@ -114,7 +113,8 @@ pipeline {
                     steps {
                         sh "cat /etc/os-release"
                         sh "omc --version"
-                        sh "make -C /fmi-cross-check/ validate-files"
+                        sh "find /fmi-cross-check/fmus -name *.fmu | grep \"OpenModelica\""
+                        //sh "make -C /fmi-cross-check/ validate-files"
                     }
                 }
             }
