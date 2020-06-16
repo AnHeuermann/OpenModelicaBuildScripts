@@ -1,6 +1,6 @@
 
 # Remove "OMCompiler " and replace "~" with "-"
-OMC_VERSION=$$(omc --version | sed -e 's/[\~]/-/g' | grep -oE '[^ ]+$')
+OMC_VERSION=$$(omc --version | sed -e 's/[\~]/-/g' | grep -oE '[^ ]+$$')
 BRANCH_NAME=add-OpenModelica-$(OMC_VERSION)
 
 all:
