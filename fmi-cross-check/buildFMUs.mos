@@ -1,5 +1,5 @@
 // Change the following parameters to add new tests.
-// TODO: MOve this first part to additional file. Create it OS-dependent and read the values from that.
+// TODO: Move this first part to additional file. Create it OS-dependent and read the values from that.
 echo(false);
 DOCKER_CONTAINER := "openmodelica:nightly-1.16-dev-focal";
 OMC_COMPILER := "CC=clang\nCXX=clang++";
@@ -11,6 +11,8 @@ FMI_TYPES := {"me", "cs"};
 MODELICA_VERSION := "4.0.0";
 REFERENCE_INTEGRATOR_METHOD := "dassl";
 CREATE_REFERENCES := true;
+
+// TODO: Move tests to an additional file as well
 // Add for each test a list {<testModelFullName>, <testModelShortName>, <testModelDescription>}
 TEST_MODELS := {{"BouncingBall","BouncingBall", "Bouncing ball example from https://github.com/OpenModelica/OpenModelica/blob/master/OMCompiler/Examples/BouncingBall.mo."},
                 {"Modelica.Electrical.Analog.Examples.Rectifier","Rectifier", "Modelica.Electrical.Analog.Examples.Rectifier from MSL "+MODELICA_VERSION},
@@ -45,9 +47,8 @@ loadModel(Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature); getErro
 
 // Don't touch this
 TOOL_ID := "OpenModelica";
-tmpVersion := stringSplit(getVersion()," ");          // Remove everything before space
-tmpVersion := stringReplace(tmpVersion[2],"~", "-");  // Replay "~" with "-"
-TOOL_VERSION := tmpVersion[1];
+tmpVersion := stringSplit(getVersion()," ");            // Remove everything before first space
+TOOL_VERSION := stringReplace(tmpVersion[2],"~", "-");  // Replay "~" with "-"
 
 // Load MSL
 success := loadModel(Modelica, {MODELICA_VERSION}); getErrorString();
@@ -59,9 +60,7 @@ echo(true);
 
 print("OMC version: " + TOOL_VERSION + "\n");
 
-remove("fmus-tmp");
-mkdir("fmus-tmp");
-cd("fmus-tmp"); // TODO: Change to "fmus"
+cd("fmus");
 thisDir := cd("");
 
 for fmiVersion in FMI_VERSION loop
