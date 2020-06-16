@@ -4,7 +4,7 @@ pipeline {
     }
 
     stages {
-        stage('Setup') {
+        stage('Environment') {
             parallel {
                 stage('Hello') {
                     steps {
@@ -42,13 +42,16 @@ pipeline {
                 }
             }
             steps ('Prepare fmi-cross-check') {
+                sh "git --version"
+                dir('/fmi-cross-check') {
+                    sh "git clean -fdx"
+                }
                 sh "ls /fmi-cross-check"
                 sh "ls /OpenModelicaBuildScripts"
                 sh "ls /OpenModelicaBuildScripts/fmi-cross-check/"
                 sh "cp /OpenModelicaBuildScripts/fmi-cross-check/Makefile /fmi-cross-check/"
                 sh "cp /OpenModelicaBuildScripts/fmi-cross-check/buildFMUs.mos /fmi-cross-check/"
                 sh "ls /fmi-cross-check"
-                sh "git --version"
                 sh "make -C /fmi-cross-check/ checkout-git"
             }
         }
@@ -98,7 +101,7 @@ pipeline {
                     steps {
                         sh "cat /etc/os-release"
                         sh "omc --version"
-                        sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
+                        sh "make -C /fmi-cross-check/ validate-files"
                     }
                 }
                 stage('Linux 32') {
@@ -111,7 +114,7 @@ pipeline {
                     steps {
                         sh "cat /etc/os-release"
                         sh "omc --version"
-                        sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
+                        sh "make -C /fmi-cross-check/ validate-files"
                     }
                 }
             }
