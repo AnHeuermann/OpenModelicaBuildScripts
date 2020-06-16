@@ -1,4 +1,3 @@
-// Change the following parameters to add new tests.
 // TODO: Move this first part to additional file. Create it OS-dependent and read the values from that.
 echo(false);
 DOCKER_CONTAINER := "openmodelica:nightly-1.16-dev-focal";
@@ -11,6 +10,14 @@ FMI_TYPES := {"me", "cs"};
 MODELICA_VERSION := "4.0.0";
 REFERENCE_INTEGRATOR_METHOD := "dassl";
 CREATE_REFERENCES := true;
+
+// Load MSL
+success := loadModel(Modelica, {MODELICA_VERSION}); getErrorString();
+if not success then
+  print("Could not load Modelica Standard Library version " + MODELICA_VERSION + "\n");
+  //exit(1);
+end if;
+echo(true);
 
 // TODO: Move tests to an additional file as well
 // Add for each test a list {<testModelFullName>, <testModelShortName>, <testModelDescription>}
@@ -49,14 +56,6 @@ loadModel(Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature); getErro
 TOOL_ID := "OpenModelica";
 tmpVersion := stringSplit(getVersion()," ");            // Remove everything before first space
 TOOL_VERSION := stringReplace(tmpVersion[2],"~", "-");  // Replay "~" with "-"
-
-// Load MSL
-success := loadModel(Modelica, {MODELICA_VERSION}); getErrorString();
-if not success then
-  print("Could not load Modelica Standard Library version " + MODELICA_VERSION + "\n");
-  exit(1);
-end if;
-echo(true);
 
 print("OMC version: " + TOOL_VERSION + "\n");
 
