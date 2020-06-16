@@ -1,0 +1,25 @@
+# Build with
+# $ docker build --tag anheuermann/fmpy:bionic32bit -f Dockerfile.fmpy.linux64 .
+FROM i386/ubuntu:bionic
+
+# Install Python
+RUN apt-get update \
+    && apt-get install python3-pip -qy \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install PyQt5
+# See https://stackoverflow.com/questions/59711301/install-pyqt5-5-14-1-on-linux
+RUN apt-get update \
+    && apt-get install python3-venv -qy \
+    && python3 -m venv env \
+    && source env/bin/activate \
+    && pip3 install pyqt5 --only-binary pyqt5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install PyFMI 
+# and it's missing dependency scipy
+#RUN python3 -m pip install scipy \
+#    && python3 -m pip install fmpy[complete]
+RUN python3 -m pip install fmpy[complete]

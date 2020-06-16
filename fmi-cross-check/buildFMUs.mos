@@ -1,6 +1,6 @@
 // TODO: Move this first part to additional file. Create it OS-dependent and read the values from that.
-echo(false);
 DOCKER_CONTAINER := "openmodelica:nightly-1.16-dev-focal";
+
 OMC_COMPILER := "CC=clang\nCXX=clang++";
 AVAILABLE_PLATFORMS := "linux64";
 OS_SHORT := "linux64";
@@ -11,49 +11,31 @@ MODELICA_VERSION := "4.0.0";
 REFERENCE_INTEGRATOR_METHOD := "dassl";
 CREATE_REFERENCES := true;
 
+
+
+TOOL_ID := "OpenModelica";
+
+
+// Don't touch this
+
 // Load MSL
-success := loadModel(Modelica, {MODELICA_VERSION}); getErrorString();
+success := loadModel(Modelica, {MODELICA_VERSION}); 
+getErrorString();
 if not success then
   print("Could not load Modelica Standard Library version " + MODELICA_VERSION + "\n");
   //exit(1);
 end if;
-echo(true);
-
-// TODO: Move tests to an additional file as well
-// Add for each test a list {<testModelFullName>, <testModelShortName>, <testModelDescription>}
-TEST_MODELS := {{"BouncingBall","BouncingBall", "Bouncing ball example from https://github.com/OpenModelica/OpenModelica/blob/master/OMCompiler/Examples/BouncingBall.mo."},
-                {"Modelica.Electrical.Analog.Examples.Rectifier","Rectifier", "Modelica.Electrical.Analog.Examples.Rectifier from MSL "+MODELICA_VERSION},
-                {"Modelica.Mechanics.Rotational.Examples.CoupledClutches","CoupledClutches", "Modelica.Mechanics.Rotational.Examples.CoupledClutches from MSL "+MODELICA_VERSION},
-                {"Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature","ControlledTemperature", "Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature from MSL "+MODELICA_VERSION}};
-
-loadString("
-model BouncingBall
-  parameter Real e=0.7 \"coefficient of restitution\";
-  parameter Real g=9.81 \"gravity acceleration\";
-  Real h(fixed=true, start=1) \"height of ball\";
-  Real v(fixed=true) \"velocity of ball\";
-  Boolean flying(fixed=true, start=true) \"true, if ball is flying\";
-  Boolean impact;
-  Real v_new(fixed=true);
-  Integer foo;
-equation
-  impact = h <= 0.0;
-  foo = if impact then 1 else 2;
-  der(v) = if flying then -g else 0;
-  der(h) = v;
-  when {h <= 0.0 and v <= 0.0,impact} then
-    v_new = if edge(impact) then -e*pre(v) else 0;
-    flying = v_new > 0;
-    reinit(v, v_new);
-  end when;
-end BouncingBall;"); getErrorString();
-loadModel(Modelica.Electrical.Analog.Examples.Rectifier); getErrorString();
-loadModel(Modelica.Mechanics.Rotational.Examples.CoupledClutches); getErrorString();
-loadModel(Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature); getErrorString();
 
 
-// Don't touch this
-TOOL_ID := "OpenModelica";
+// Load test models
+appendEnvironmentVar("MODELICA_VERSION", MODELICA_VERSION); getErrorString();
+r := runScript("testModels.mos");
+getErrorString();
+if r=="Failed" then
+  print("Failed to load test models from \"testModels.mos\" \n");
+  exit(1);
+end if;
+
 tmpVersion := stringSplit(getVersion()," ");            // Remove everything before first space
 TOOL_VERSION := stringReplace(tmpVersion[2],"~", "-");  // Replay "~" with "-"
 
@@ -78,7 +60,9 @@ for fmiVersion in FMI_VERSION loop
         testModelFullName := testModel[1];
         testModelShortName := testModel[2];
         testModelDescription := testModel[3];
-        print("\nTesting" + testModelShortName + " for FMI " +fmiVersion+ " " + fmiType + "\n===============================================================================\n");
+        testModelValiadtionVars := stringSplit(testModel[4], ",");
+        print("\nTesting " + testModelShortName + " for FMI " +fmiVersion+ " " + fmiType + 
+              "\n===============================================================================\n");
 
         // Enter model directory
         testModelDir := thisDir + "/" + fmiVersion + "/" + fmiType + "/" + OS_SHORT + "/" + TOOL_ID + "/" + TOOL_VERSION + "/" + testModelShortName;
@@ -90,9 +74,9 @@ for fmiVersion in FMI_VERSION loop
         if CREATE_REFERENCES then
           // Create reference results
           writeFile("createRef.mos", "
-  SimulationResult := simulate("+testModelFullName+", startTime="+String(start)+", stopTime="+String(stop)+", numberOfIntervals="+String(numberOfIntervals)+", tolerance="+String(tolerance)+", method=\""+REFERENCE_INTEGRATOR_METHOD+"\", fileNamePrefix=\""+testModelShortName+"\", outputFormat=\"csv\");
-  print(getErrorString()+\"\\n\");
-  ");
+SimulationResult := simulate("+testModelFullName+", startTime="+String(start)+", stopTime="+String(stop)+", numberOfIntervals="+String(numberOfIntervals)+", tolerance="+String(tolerance)+", method=\""+REFERENCE_INTEGRATOR_METHOD+"\", fileNamePrefix=\""+testModelShortName+"\", outputFormat=\"csv\");
+print(getErrorString()+\"\\n\");
+");
           getErrorString();
 
           r := runScript("createRef.mos");
@@ -103,6 +87,10 @@ for fmiVersion in FMI_VERSION loop
 
           copy(testModelShortName+"_res.csv", testModelShortName+"_ref.csv");
           remove(testModelShortName+"_res.csv");
+          // TODO Filter results for testModelValiadtionVars
+          // csv not implemented for filterSimulationResults
+          //success := filterSimulationResults(testModelShortName+"_res.csv", testModelShortName+"_ref.csv", testModelValiadtionVars, 0, true);
+          //getErrorString();
           if not regularFileExists(testModelShortName+"_ref.csv") then
             print("Failed to create reference results for " + testModelFullName + "\n");
             exit(1);
@@ -112,9 +100,9 @@ for fmiVersion in FMI_VERSION loop
 
           // Create simulation settings
           writeFile(testModelShortName+"_ref.opt", "StartTime, "+String(start)+"
-  StopTime, "+String(stop)+"
-  StepSize, 0.0
-  RelTol, "+String(tolerance));
+StopTime, "+String(stop)+"
+StepSize, 0.0
+RelTol, "+String(tolerance));
           getErrorString();
 
           if not regularFileExists(testModelShortName+"_ref.opt") then
@@ -155,18 +143,18 @@ See https://github.com/OpenModelica/OpenModelica");
 
         // Build FMU
         writeFile("buildFMU.mos", "
-  fmu := buildModelFMU("+testModelFullName+", version=\""+fmiVersion+"\", fmuType=\""+fmiType+"\", fileNamePrefix=\""+testModelShortName+"\", platforms="+PLATFORMS+");
-  print(getErrorString()+\"\\n\");
-  if fmu == \"\" then
-    exit(1);
-  end if;");
+fmu := buildModelFMU("+testModelFullName+", version=\""+fmiVersion+"\", fmuType=\""+fmiType+"\", fileNamePrefix=\""+testModelShortName+"\", platforms="+PLATFORMS+");
+print(getErrorString()+\"\\n\");
+if fmu == \"\" then
+  exit(1);
+end if;");
         r := runScript("buildFMU.mos");
         if r=="Failed" then
           print("Failed to compile FMU for " + testModelFullName + "\n");
           exit(1);
         end if;
 
-        if  not regularFileExists(testModelShortName+".fmu") then
+        if not regularFileExists(testModelShortName+".fmu") then
           print("Failed to create FMU for " + testModelFullName + "\n");
           exit(1);
         else
@@ -179,5 +167,5 @@ See https://github.com/OpenModelica/OpenModelica");
   end for;
 end for;
 
-print("All FMUs build!\n\n\nFinished successful");
+print("All FMUs build!\nFinished successful\n");
 exit(0);

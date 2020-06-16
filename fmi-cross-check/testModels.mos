@@ -1,0 +1,71 @@
+// How to add tests for the fmi-cross-check
+// 1. Define TEST_XXX := {<testModelFullName>, <testModelShortName>, <testModelDescription>, {"var1,var2,...""}}
+// 2. Add TEST_XXX to list TEST_MODELS.
+// 3. Load model either with loadString() or with loadModel() if it's a model from MSL
+
+// Get environment variables
+MODELICA_VERSION := getEnvironmentVar("MODELICA_VERSION");
+print("Using MSL version " + MODELICA_VERSION +"\n");
+
+// Bouncing Ball Test
+TEST_001 := {
+    "BouncingBall",
+    "BouncingBall",
+    "Bouncing ball example from https://github.com/OpenModelica/OpenModelica/blob/master/OMCompiler/Examples/BouncingBall.mo.",
+    "v,h"};
+loadString("
+model BouncingBall
+  parameter Real e=0.7 \"coefficient of restitution\";
+  parameter Real g=9.81 \"gravity acceleration\";
+  Real h(fixed=true, start=1) \"height of ball\";
+  Real v(fixed=true) \"velocity of ball\";
+  Boolean flying(fixed=true, start=true) \"true, if ball is flying\";
+  Boolean impact;
+  Real v_new(fixed=true);
+  Integer foo;
+equation
+  impact = h <= 0.0;
+  foo = if impact then 1 else 2;
+  der(v) = if flying then -g else 0;
+  der(h) = v;
+  when {h <= 0.0 and v <= 0.0,impact} then
+    v_new = if edge(impact) then -e*pre(v) else 0;
+    flying = v_new > 0;
+    reinit(v, v_new);
+  end when;
+end BouncingBall;"); getErrorString();
+
+// Rectifier Test
+TEST_002 := {
+    "Modelica.Electrical.Analog.Examples.Rectifier",
+    "Rectifier",
+    "Modelica.Electrical.Analog.Examples.Rectifier from MSL "+MODELICA_VERSION,
+    "Inductor2.i,Inductor3.i,Capacitor1.v,Capacitor2.v"};
+loadModel(Modelica.Electrical.Analog.Examples.Rectifier); getErrorString();
+
+// CoupledClutches Test
+TEST_003 := {
+    "Modelica.Mechanics.Rotational.Examples.CoupledClutches",
+    "CoupledClutches",
+    "Modelica.Mechanics.Rotational.Examples.CoupledClutches from MSL "+MODELICA_VERSION,
+    "clutch1.phi_rel,clutch1.w_rel,clutch2.phi_rel,clutch2.w_rel,J3.phi,J3.w,clutch3.phi_rel,clutch3.w_rel"};
+loadModel(Modelica.Mechanics.Rotational.Examples.CoupledClutches); getErrorString();
+
+// ControlledTemperature Test
+TEST_004 := {
+    "Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature",
+    "ControlledTemperature",
+    "Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature from MSL "+MODELICA_VERSION,
+    "heatCapacitor.T"};
+loadModel(Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature); getErrorString();
+
+// Add new tests here
+// <---------
+
+
+// Add all tests to TEST_MODELS
+TEST_MODELS := {TEST_001,
+                TEST_002,
+                TEST_003,
+                TEST_004};
+
