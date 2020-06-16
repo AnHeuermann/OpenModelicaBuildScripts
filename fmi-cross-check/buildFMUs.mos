@@ -79,7 +79,7 @@ for fmiVersion in FMI_VERSION loop
         testModelFullName := testModel[1];
         testModelShortName := testModel[2];
         testModelDescription := testModel[3];
-        print("\nTesting" + testModelShortName + " for FMI " +fmiVersion+ " " + fmiType "\n===============================================================================\n");
+        print("\nTesting" + testModelShortName + " for FMI " +fmiVersion+ " " + fmiType + "\n===============================================================================\n");
 
         // Enter model directory
         testModelDir := thisDir + "/" + fmiVersion + "/" + fmiType + "/" + OS_SHORT + "/" + TOOL_ID + "/" + TOOL_VERSION + "/" + testModelShortName;
