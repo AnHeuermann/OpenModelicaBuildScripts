@@ -17,51 +17,110 @@ pipeline {
                 stage('Clone fmi-cross-check') {
                     steps {
                         dir('fmi-cross-check') {
-                            git branch: 'master', url: 'https://github.com/AnHeuermann/fmi-cross-check'
+                            git branch: 'master', url: 'https://github.com/AnHeuermann/fmi-cross-check.git'
                         }
                         sh "ls fmi-cross-check/"
-                        sh 'pwd'
                     }
                 }
-                stage('Clone OpenModelicaBuildScripts-cross-check') {
+                stage('Clone OpenModelicaBuildScripts') {
                     steps {
-                        dir('fmi-cross-check') {
-                            git branch: 'fmi-cross-check', url: 'https://github.com/AnHeuermann/OpenModelicaBuildScripts'
+                        dir('OpenModelicaBuildScripts') {
+                            git branch: 'fmi-cross-check', url: 'https://github.com/AnHeuermann/OpenModelicaBuildScripts.git'
                         }
-                        sh "ls fmi-cross-check/"
-                        sh 'pwd'
+                        sh "ls OpenModelicaBuildScripts/"
                     }
                 }
             }
         }
-        stage('Compile FMUs') {
+
+        stage('Prepare fmi-cross-check') {
             agent {
                 docker {
-                    image "openmodelica/openmodelica:nightly-minimal-1.16-dev-20200430"
-                    args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
+                    image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                    alwaysPull true
+                    args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check -v ${env.WORKSPACE}/OpenModelicaBuildScripts:/OpenModelicaBuildScripts"
                 }
             }
-            steps {
-                sh "omc --version"
+            steps ('Prepare fmi-cross-check') {
                 sh "ls /fmi-cross-check"
+                sh "ls /OpenModelicaBuildScripts"
+                sh "ls /OpenModelicaBuildScripts/fmi-cross-check/"
+                sh "cp /OpenModelicaBuildScripts/fmi-cross-check/Makefile /fmi-cross-check/"
+                sh "cp /OpenModelicaBuildScripts/fmi-cross-check/buildFMUs.mos /fmi-cross-check/"
+                sh "ls /fmi-cross-check"
+                sh "git --version"
+                sh "make -C /fmi-cross-check/ checkout-git"
             }
         }
+
+        stage('Compile FMUs') {
+            parallel {
+                stage('Linux 64') {
+                    agent {
+                        docker {
+                            image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                            args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
+                        }
+                    }
+                    steps {
+                        sh "cat /etc/os-release"
+                        sh "omc --version"
+                        sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
+                    }
+                }
+                stage('Linux 32') {
+                    agent {
+                        docker {
+                            image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                            args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
+                        }
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh "cat /etc/os-release"
+                            sh "omc --version"
+                            sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Validate FMUs') {
-            agent {
-                docker {
-                    image "openmodelica:nightly-focal-1.16-dev"
-                    args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
+            parallel {
+                stage('Linux 64') {
+                    agent {
+                        docker {
+                            image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                            args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
+                        }
+                    }
+                    steps {
+                        sh "cat /etc/os-release"
+                        sh "omc --version"
+                        sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
+                    }
                 }
-            }
-            steps {
-                dir('/fmi-cross-check') {
-                    sh "ls"
-                    sh "python3 -m fmpy.cross_check.validate_vendor_repo"
+                stage('Linux 32') {
+                    agent {
+                        docker {
+                            image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                            args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
+                        }
+                    }
+                    steps {
+                        sh "cat /etc/os-release"
+                        sh "omc --version"
+                        sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
+                    }
                 }
             }
         }
+
         stage('Upload to GitHub') {
-            echo "Uploding to OpenModelica/fmi-cross-check"
+            steps {
+                echo "Uploding to OpenModelica/fmi-cross-check"
+            }
         }
     }
 }

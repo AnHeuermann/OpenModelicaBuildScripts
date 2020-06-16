@@ -45,8 +45,8 @@ loadModel(Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature); getErro
 
 // Don't touch this
 TOOL_ID := "OpenModelica";
-tmpVersion := stringSplit(getVersion()," ");
-tmpVersion := stringSplit(tmpVersion[2],"+");
+tmpVersion := stringSplit(getVersion()," ");          // Remove everything before space
+tmpVersion := stringReplace(tmpVersion[2],"~", "-");  // Replay "~" with "-"
 TOOL_VERSION := tmpVersion[1];
 
 // Load MSL

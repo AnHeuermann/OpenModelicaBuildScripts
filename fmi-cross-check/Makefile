@@ -1,15 +1,17 @@
 
-OMC_VERSION=$$(omc --version | grep -oE '[^ ]+$$'| grep -o '^[^+]*')
+# Remove "OMCompiler " and replace "~" with "-"
+OMC_VERSION=$$(omc --version | sed -e 's/[\~]/-/g' | grep -oE '[^ ]+$')
 BRANCH_NAME=add-OpenModelica-$(OMC_VERSION)
 
+all:
+	make checkout-git
+	make compile-OpenModelica-FMUS
+	make validate-files
 
-
-all: validate-files
-
-validate-files: compile-OpenModelica-FMUS
+validate-files:
 	python3 -m fmpy.cross_check.validate_vendor_repo
 
-compile-OpenModelica-FMUS: checkout-git
+compile-OpenModelica-FMUS:
 	omc buildFMUs.mos
 
 checkout-git:
