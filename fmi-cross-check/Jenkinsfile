@@ -36,7 +36,7 @@ pipeline {
         stage('Prepare fmi-cross-check') {
             agent {
                 docker {
-                    image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                    image "anheuermann/openmodelica:nightly-1.16-dev-focal-arm64"
                     alwaysPull true
                     args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check -v ${env.WORKSPACE}/OpenModelicaBuildScripts:/OpenModelicaBuildScripts"
                 }
@@ -60,7 +60,7 @@ pipeline {
                 stage('Linux 64') {
                     agent {
                         docker {
-                            image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                            image "anheuermann/openmodelica:nightly-1.16-dev-focal-arm64"
                             args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
                         }
                     }
@@ -73,7 +73,7 @@ pipeline {
                 stage('Linux 32') {
                     agent {
                         docker {
-                            image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                            image "anheuermann/openmodelica:nightly-1.16-dev-focal-arm64"
                             args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
                         }
                     }
@@ -106,7 +106,7 @@ pipeline {
                 stage('Linux 32') {
                     agent {
                         docker {
-                            image "anheuermann/fmpy:nightly-1.16-dev-focal"
+                            image "anheuermann/fmpy:bionic-i386"
                             args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
                         }
                     }
