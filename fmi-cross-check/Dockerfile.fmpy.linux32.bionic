@@ -1,5 +1,5 @@
 # Build with
-# $ docker build --tag anheuermann/fmpy:bionic32bit -f Dockerfile.fmpy.linux64 .
+# $ docker build --tag anheuermann/fmpy:bionic-i386 -f Dockerfile.fmpy.linux64 .
 FROM i386/ubuntu:bionic
 
 # Install Python
@@ -22,4 +22,3 @@ RUN apt-get update \
 # and it's missing dependency scipy
 #RUN python3 -m pip install scipy \
 #    && python3 -m pip install fmpy[complete]
-RUN python3 -m pip install fmpy[complete]

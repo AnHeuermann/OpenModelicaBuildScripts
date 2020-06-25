@@ -1,17 +1,22 @@
 # Build with
-# $ docker build --tag anheuermann/openmodelica:nightly-1.16-dev-focal -f Dockerfile.fmi-cross-check.linux64 .
-FROM anheuermann/fmpy:focal-fossa
+# $ docker build --tag anheuermann/openmodelica:nightly-1.16-dev-focal-arm64 -f Dockerfile.fmi-cross-check.linux64 .
+FROM anheuermann/fmpy:focal-arm64
+ADD installModelica.mos installModelica.mos
 
-# Install OpenModelica nightly build
+# Install omc from OpenModelica nightly build
 RUN apt-get update \
     && apt-get upgrade -qy && apt-get dist-upgrade -qy \
     && apt-get install -qy gnupg ca-certificates wget \
     && echo "deb https://build.openmodelica.org/apt focal nightly" > /etc/apt/sources.list.d/openmodelica.list \
     && wget https://build.openmodelica.org/apt/openmodelica.asc -O- | apt-key add - \
     && apt-get update && apt-get upgrade && apt-get dist-upgrade \
-    && apt-get install -qy openmodelica omlib-modelica-4.0.0 \
+    && apt-get install -qy omc\
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
+
+# Install MSL 4.0.0
+RUN omc installModelica.mos \
+    && rm installModelica.mos
 
 # Install git
 RUN apt-get update \

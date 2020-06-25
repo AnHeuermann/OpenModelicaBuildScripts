@@ -9,7 +9,7 @@ all:
 	make validate-files
 
 validate-files:
-	python3 -m fmpy.cross_check.validate_vendor_repo
+	python3 -m fmpy.cross_check.validate_vendor_repo --clean-up
 
 compile-OpenModelica-FMUS:
 	omc buildFMUs.mos

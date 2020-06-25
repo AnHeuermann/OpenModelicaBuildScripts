@@ -49,6 +49,7 @@ pipeline {
                 sh "ls /OpenModelicaBuildScripts/fmi-cross-check/"
                 sh "cp /OpenModelicaBuildScripts/fmi-cross-check/Makefile /fmi-cross-check/"
                 sh "cp /OpenModelicaBuildScripts/fmi-cross-check/buildFMUs.mos /fmi-cross-check/"
+                sh "cp /OpenModelicaBuildScripts/fmi-cross-check/testModels.mos /fmi-cross-check/"
                 sh "ls /fmi-cross-check"
                 sh "make -C /fmi-cross-check/ checkout-git"
             }
@@ -92,13 +93,12 @@ pipeline {
                 stage('Linux 64') {
                     agent {
                         docker {
-                            image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                            image "anheuermann/fmpy:focal-arm64"
                             args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
                         }
                     }
                     steps {
                         sh "cat /etc/os-release"
-                        sh "omc --version"
                         sh "find /fmi-cross-check/fmus -name *.fmu | grep \"OpenModelica\""
                         sh "make -C /fmi-cross-check/ validate-files"
                     }
@@ -106,13 +106,12 @@ pipeline {
                 stage('Linux 32') {
                     agent {
                         docker {
-                            image "anheuermann/openmodelica:nightly-1.16-dev-focal"
+                            image "anheuermann/fmpy:nightly-1.16-dev-focal"
                             args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
                         }
                     }
                     steps {
                         sh "cat /etc/os-release"
-                        sh "omc --version"
                         sh "find /fmi-cross-check/fmus -name *.fmu | grep \"OpenModelica\""
                         //sh "make -C /fmi-cross-check/ validate-files"
                     }

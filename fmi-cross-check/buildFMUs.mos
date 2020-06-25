@@ -7,7 +7,7 @@ OS_SHORT := "linux64";
 PLATFORMS := "{\"static\"}";
 FMI_VERSION := {"1.0", "2.0"};
 FMI_TYPES := {"me", "cs"};
-MODELICA_VERSION := "4.0.0";
+MODELICA_VERSION := "3.2.3";
 REFERENCE_INTEGRATOR_METHOD := "dassl";
 CREATE_REFERENCES := true;
 
