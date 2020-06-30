@@ -17,8 +17,8 @@ loadString("
 model BouncingBall
   parameter Real e=0.7 \"coefficient of restitution\";
   parameter Real g=9.81 \"gravity acceleration\";
-  Real h(fixed=true, start=1) \"height of ball\";
-  Real v(fixed=true) \"velocity of ball\";
+  output Real h(fixed=true, start=1) \"height of ball\";
+  output Real v(fixed=true) \"velocity of ball\";
   Boolean flying(fixed=true, start=true) \"true, if ball is flying\";
   Boolean impact;
   Real v_new(fixed=true);
@@ -33,6 +33,8 @@ equation
     flying = v_new > 0;
     reinit(v, v_new);
   end when;
+annotation(
+  experiment(StartTime = 0, StopTime = 3, Tolerance = 1e-6, Interval = 0.006));
 end BouncingBall;"); getErrorString();
 
 // Rectifier Test
