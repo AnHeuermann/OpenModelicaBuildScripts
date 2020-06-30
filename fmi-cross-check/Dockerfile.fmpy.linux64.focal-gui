@@ -1,0 +1,9 @@
+# Build with
+# $ docker build --tag anheuermann/fmpy:focal-arm64-gui -f Dockerfile.fmpy.linux64.focal-gui .
+FROM anheuermann/fmpy:focal-arm64
+
+# Install PyQt5
+RUN apt-get update \
+    && apt-get install python3-pyqt5 -qy \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
