@@ -1,6 +1,6 @@
 # Build with
-# $ docker build --tag anheuermann/openmodelica:nightly-1.16-dev-focal-arm64 -f Dockerfile.fmi-cross-check.linux64 .
-FROM anheuermann/fmpy:focal-arm64
+# $ docker build --no-cache --tag anheuermann/openmodelica:nightly-1.16-dev-focal-amd64 -f Dockerfile.fmi-cross-check.linux64 .
+FROM anheuermann/fmpy:focal-amd64
 ADD installModelica.mos installModelica.mos
 
 # Install omc from OpenModelica nightly build

@@ -60,7 +60,7 @@ for fmiVersion in FMI_VERSION loop
         testModelFullName := testModel[1];
         testModelShortName := testModel[2];
         testModelDescription := testModel[3];
-        testModelValiadtionVars := stringSplit(testModel[4], ",");
+        testModelValidationVars := testModel[4];
         print("\nTesting " + testModelShortName + " for FMI " +fmiVersion+ " " + fmiType + 
               "\n===============================================================================\n");
 
@@ -70,11 +70,12 @@ for fmiVersion in FMI_VERSION loop
         out := cd(testModelDir); getErrorString();
         print("Entering "+ out + "\n");
 
-        (start,stop,tolerance,numberOfIntervals,interval) := getSimulationOptions(testModelFullName);
         if CREATE_REFERENCES then
           // Create reference results
           writeFile("createRef.mos", "
-SimulationResult := simulate("+testModelFullName+", startTime="+String(start)+", stopTime="+String(stop)+", numberOfIntervals="+String(numberOfIntervals)+", tolerance="+String(tolerance)+", method=\""+REFERENCE_INTEGRATOR_METHOD+"\", fileNamePrefix=\""+testModelShortName+"\", outputFormat=\"csv\");
+(start,stop,tolerance,numberOfIntervals,interval) := getSimulationOptions("+testModelFullName+");
+print(\"start=\"+start+\"\\n\");
+SimulationResult := simulate("+testModelFullName+", startTime=start, stopTime=stop, numberOfIntervals=numberOfIntervals, tolerance=tolerance, method=\""+REFERENCE_INTEGRATOR_METHOD+"\", fileNamePrefix=\""+testModelShortName+"\", outputFormat=\"csv\");
 print(getErrorString()+\"\\n\");
 ");
           getErrorString();
@@ -85,13 +86,10 @@ print(getErrorString()+\"\\n\");
             exit(1);
           end if;
 
-          copy(testModelShortName+"_res.csv", testModelShortName+"_ref.csv");
-          remove(testModelShortName+"_res.csv");
-          // TODO Filter results for testModelValiadtionVars
-          // csv not implemented for filterSimulationResults
-          //success := filterSimulationResults(testModelShortName+"_res.csv", testModelShortName+"_ref.csv", testModelValiadtionVars, 0, true);
-          //getErrorString();
-          if not regularFileExists(testModelShortName+"_ref.csv") then
+          cmd := "python3 /usr/local/bin/filterCSV.py "+testModelShortName+"_res.csv "+testModelShortName+"_ref.csv "+testModelValidationVars;
+          ret := system(cmd);
+          getErrorString();
+          if not regularFileExists(testModelShortName+"_ref.csv") or not ret==0 then
             print("Failed to create reference results for " + testModelFullName + "\n");
             exit(1);
           else
@@ -142,7 +140,13 @@ See https://github.com/OpenModelica/OpenModelica");
         end if;
 
         // Build FMU
+        if fmiType=="cs" then
+          commandLineOptions := "setCommandLineOptions(\"--fmiFlags=s:cvode\");";
+        else
+          commandLineOptions :="";
+        end if;
         writeFile("buildFMU.mos", "
+"+commandLineOptions+"
 fmu := buildModelFMU("+testModelFullName+", version=\""+fmiVersion+"\", fmuType=\""+fmiType+"\", fileNamePrefix=\""+testModelShortName+"\", platforms="+PLATFORMS+");
 print(getErrorString()+\"\\n\");
 if fmu == \"\" then
@@ -159,6 +163,40 @@ end if;");
           exit(1);
         else
             print("Build FMU "+testModelShortName+".fmu!\n");
+        end if;
+
+        // Validate if FMU is correct
+        cmd := "python3 /usr/local/bin/logVariables.py "+testModelShortName+".fmu";
+        ret := system(cmd);
+        getErrorString();
+        writeFile("validateFMU.mos", "
+(success, failVars) := diffSimulationResults(\""+testModelShortName+"_out.csv\", \""+testModelShortName+"_res.csv\", \""+testModelShortName+"_diff\");
+print(getErrorString()+\"\\n\");
+if not success then
+  print(\"Validation failed for variables:\\n\");
+  for failVar in failVars loop
+    print(\"\\t\"+failVar+\"\\n\");
+  end for;
+  //exit(1);
+end if;");
+        r := runScript("validateFMU.mos");
+        if not ret==0 or r=="Failed" then
+          print("Failed to validate FMU for " + testModelFullName + "\n");
+          exit(1);
+        end if;
+        
+
+        // Clean up
+        writeFile("deps.tmp", testModelShortName+".fmu\n"+testModelShortName+"_ref.csv\n"+testModelShortName+"_ref.opt\nREADME.txt");
+        getErrorString();
+        cmd := "ls | grep -w -v -f deps.tmp | xargs rm -rf";
+        ret := system(cmd);
+        getErrorString();
+        if not ret==0 then
+          print("Failed to clean up for " + testModelFullName + "\n");
+          exit(1);
+        else
+            print("Cleaned up!\n");
         end if;
 
       end for;

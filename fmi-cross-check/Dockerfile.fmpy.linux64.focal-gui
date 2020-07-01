@@ -1,5 +1,5 @@
 # Build with
-# $ docker build --tag anheuermann/fmpy:focal-arm64-gui -f Dockerfile.fmpy.linux64.focal-gui .
+# $ docker build --tag anheuermann/fmpy:focal-amd64-gui -f Dockerfile.fmpy.linux64.focal-gui .
 FROM anheuermann/fmpy:focal-arm64
 
 # Install PyQt5

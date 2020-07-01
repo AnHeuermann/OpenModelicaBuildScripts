@@ -11,7 +11,7 @@ all:
 validate-files:
 	python3 -m fmpy.cross_check.validate_vendor_repo --clean-up
 
-compile-OpenModelica-FMUS:
+compile-OpenModelica-FMUs:
 	omc buildFMUs.mos
 
 checkout-git:

@@ -1,5 +1,5 @@
 # Build with
-# $ docker build --tag anheuermann/fmpy:focal-arm64 -f Dockerfile.fmpy.linux64.focal .
+# $ docker build --tag anheuermann/fmpy:focal-amd64 -f Dockerfile.fmpy.linux64.focal .
 FROM ubuntu:focal
 
 # Get rid of the warning: "debconf: unable to initialize frontend: Dialog"
@@ -20,6 +20,11 @@ RUN apt-get update \
 # and it's missing dependency scipy
 RUN python3 -m pip install scipy \
     && python3 -m pip install fmpy[complete]
+
+# Install python scripts to /usr/local/bin
+RUN python3 -m pip install pandas
+COPY filterCSV.py /usr/local/bin/filterCSV.py
+COPY logVariables.py /usr/local/bin/logVariables.py
 
 # Install openblas
 # Remove this, see https://trac.openmodelica.org/OpenModelica/ticket/6017

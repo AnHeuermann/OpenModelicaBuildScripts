@@ -36,7 +36,7 @@ pipeline {
         stage('Prepare fmi-cross-check') {
             agent {
                 docker {
-                    image "anheuermann/openmodelica:nightly-1.16-dev-focal-arm64"
+                    image "anheuermann/openmodelica:nightly-1.16-dev-focal-amd64"
                     alwaysPull true
                     args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check -v ${env.WORKSPACE}/OpenModelicaBuildScripts:/OpenModelicaBuildScripts"
                 }
@@ -60,20 +60,20 @@ pipeline {
                 stage('Linux 64') {
                     agent {
                         docker {
-                            image "anheuermann/openmodelica:nightly-1.16-dev-focal-arm64"
+                            image "anheuermann/openmodelica:nightly-1.16-dev-focal-amd64"
                             args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
                         }
                     }
                     steps {
                         sh "cat /etc/os-release"
                         sh "omc --version"
-                        sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
+                        sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUs"
                     }
                 }
                 stage('Linux 32') {
                     agent {
                         docker {
-                            image "anheuermann/openmodelica:nightly-1.16-dev-focal-arm64"
+                            image "anheuermann/openmodelica:nightly-1.16-dev-focal-amd64"
                             args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
                         }
                     }
@@ -81,7 +81,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             sh "cat /etc/os-release"
                             sh "omc --version"
-                            //sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUS"
+                            //sh "make -C /fmi-cross-check/ compile-OpenModelica-FMUs"
                         }
                     }
                 }
@@ -93,7 +93,7 @@ pipeline {
                 stage('Linux 64') {
                     agent {
                         docker {
-                            image "anheuermann/fmpy:focal-arm64"
+                            image "anheuermann/fmpy:focal-amd64"
                             args "-v ${env.WORKSPACE}/fmi-cross-check:/fmi-cross-check"
                         }
                     }

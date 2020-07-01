@@ -1,5 +1,5 @@
 # Build with
-# $ docker build --tag anheuermann/fmpy:bionic-arm64 -f Dockerfile.fmpy.linux64.bionic .
+# $ docker build --tag anheuermann/fmpy:bionic-amd64 -f Dockerfile.fmpy.linux64.bionic .
 FROM ubuntu:bionic
 
 # Get rid of the warning: "debconf: unable to initialize frontend: Dialog"
