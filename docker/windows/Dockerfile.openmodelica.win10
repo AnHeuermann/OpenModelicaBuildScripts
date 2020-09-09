@@ -1,0 +1,17 @@
+# Build with
+# $ docker build --tag anheuermann/openmodelica:win10 -f Dockerfile.ompython.win10 .
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
+
+# Install latest OpenModelica
+RUN $url = "https://build.openmodelica.org/omc/builds/windows/nightly-builds/64bit/OpenModelica-latest.exe" \
+    $output = "OpenModelica-latest.exe" \
+    Import-Module BitsTransfer \
+    Start-BitsTransfer -Source $url -Destination $output \
+    .\OpenModelica-latest.exe /SD \
+    $installProc = Get-Process -Name OpenModelica-latest |select -expand id \
+    Wait-Process $installProc \
+    rm OpenModelica-latest.exe \
+    &'.\Program Files\OpenModelica1.16.0-dev-64bit\bin\omc.exe' --version
+
+CMD OpenModelica --version
+
