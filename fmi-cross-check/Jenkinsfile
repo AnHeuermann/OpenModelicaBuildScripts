@@ -30,14 +30,24 @@ pipeline {
             }
           }
           environment {
-            PLATFORM = 'linux-amd64'
-            def BUILD_DATE = sh(script: "echo `date '+%y-%m-%d %H:%M'`", returnStdout: true).trim()
+            String testFMUPlatform = 'linux64'
+            String omsPlatform = 'linux-amd64'
+            String os = "Ubuntu 18.04 LTS"
+            String buildDate = sh(script: "echo `date '+%y-%m-%d %H:%M'`", returnStdout: true).trim()
+            String omsCall = "${env.WORKSPACE}" + "/OMSimulatorBinaries/OMSimulator-${omsPlatform}/bin/OMSimulator"
           }
           steps {
-            installOMSArtifactsUnix()
+            installOMSArtifactsUnix(omsPlatform)
             cloneOMSGitRepo()
             updateFmiCrossCheck()
-            runFmiCrossCheck("\"\$(pwd)\"/OMSimulatorBinaries/OMSimulator-$PLATFORM/bin/OMSimulator")
+            script {
+              def (omsVersion, omsVersionShort) = getOMSVersion(omsCall)
+              def timeStart = new Date()
+              runFmiCrossCheck(testFMUPlatform, omsCall)
+              validateResults(testFMUPlatform, omsVersion)
+              def timeStop = new Date()
+              generateHTML(omsVersionShort, omsVersion, testFMUPlatform, os, timeStart, "123456")
+            }
           }
           post {
             success {
@@ -79,14 +89,24 @@ pipeline {
             }
           }
           environment {
-            PLATFORM = 'linux-amd64'
-            def BUILD_DATE = sh(script: "echo `date '+%y-%m-%d %H:%M'`", returnStdout: true).trim()
+            String testFMUPlatform = 'linux64'
+            String omsPlatform = 'linux-amd64'
+            String os = "Ubuntu 20.04 LTS"
+            String buildDate = sh(script: "echo `date '+%y-%m-%d %H:%M'`", returnStdout: true).trim()
+            String omsCall = "${env.WORKSPACE}" + "/OMSimulatorBinaries/OMSimulator-${omsPlatform}/bin/OMSimulator"
           }
           steps {
-            installOMSArtifactsUnix()
+            installOMSArtifactsUnix(omsPlatform)
             cloneOMSGitRepo()
             updateFmiCrossCheck()
-            runFmiCrossCheck("\"\$(pwd)\"/OMSimulatorBinaries/OMSimulator-$PLATFORM/bin/OMSimulator")
+            script {
+              def (omsVersion, omsVersionShort) = getOMSVersion(omsCall)
+              def timeStart = new Date()
+              runFmiCrossCheck(testFMUPlatform, omsCall)
+              validateResults(testFMUPlatform, omsVersion)
+              def timeStop = new Date()
+              generateHTML(omsVersionShort, omsVersion, testFMUPlatform, os, timeStart, "123456")
+            }
           }
           post {
             success {
@@ -102,7 +122,7 @@ pipeline {
                       sshTransfer(
                         sourceFiles: "OMSimulator/testsuite/fmi-cross-check/linux64-focal/**/*.*",
                         removePrefix: "OMSimulator/testsuite/fmi-cross-check/",
-                        remoteDirectory: "OMSimulator/history/${BUILD_DATE}/"
+                        remoteDirectory: "OMSimulator/history/${buildDate}/"
                       )
                     ]
                   )
@@ -123,7 +143,7 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'anheuermann/ompython:bionic'
+              image 'anheuermann/ompython:wine-bionic'
               //label 'linux'
             }
           }
@@ -132,7 +152,7 @@ pipeline {
             String omsPlatform = 'mingw64'
             String os = "Ubuntu 18.04 LTS with Wine 64bit"
             String buildDate = sh(script: "echo `date '+%y-%m-%d %H:%M'`", returnStdout: true).trim()
-            String omsCall = "wine64 \"\$(pwd)\"/OMSimulatorBinaries/OMSimulator-${omsPlatform}/bin/OMSimulator.exe"
+            String omsCall = "wine64" + "${env.WORKSPACE}" + "/OMSimulatorBinaries/OMSimulator-${omsPlatform}/bin/OMSimulator.exe"
           }
           steps {
             installOMSArtifactsUnix(omsPlatform)
@@ -141,8 +161,8 @@ pipeline {
             script {
               def (omsVersion, omsVersionShort) = getOMSVersion(omsCall)
               def timeStart = new Date()
-              runFmiCrossCheck(omsCall, testFMUPlatform)
-              validateResults(omsVersion, testFMUPlatform)
+              runFmiCrossCheck(testFMUPlatform, omsCall)
+              validateResults(testFMUPlatform, omsVersion)
               def timeStop = new Date()
               generateHTML(omsVersionShort, omsVersion, testFMUPlatform, os, timeStart, "123456")
             }
@@ -187,7 +207,8 @@ def installOMSArtifactsUnix(platform) {
     unzip -qq -o archive.zip
     mkdir -p OMSimulatorBinaries/OMSimulator-${platform}
     file=\$(ls archive/OMSimulator-${platform}-*)
-    if [[ \$file ~= \\.tar.gz\$ ]]; then
+    ending=`echo -n \$file | tail -c 7`
+    if [ "\$ending" = ".tar.gz" ]; then
       tar -xvz -f \$file -C OMSimulatorBinaries/OMSimulator-${platform}
     else
       unzip \$file -d OMSimulatorBinaries/OMSimulator-${platform}
@@ -231,7 +252,7 @@ def updateFmiCrossCheck() {
 
 def getOMSVersion(omsCall) {
   echo omsCall
-  String omsVersion = sh(script: "${omsCall} --version")
+  String omsVersion = sh(script: "${omsCall} --version", returnStdout: true).trim()
   omsVersion = omsVersion.replace("OMSimulator ", "")
   String omsVersionShort = omsVersion
   if (omsVersionShort.contains("dev")) {
@@ -247,20 +268,20 @@ def getOMSVersion(omsCall) {
 /*
  *  Run FMI Cross Check test for import with OMSimulator
  */
-def runFmiCrossCheck(omsimulator, platform) {
+def runFmiCrossCheck(platform, omsimulator) {
   echo "Run FMI Cross Check"
   sh """
   $omsimulator --version
   cd OMSimulator/testsuite/fmi-cross-check
-  python3 importFMUs.py fmi-cross-check ${platform} $omsimulator
+  python3 importFMUs.py fmi-cross-check "${platform}" "${omsimulator}"
   """
 }
 
-def validateResults(omsVersion,platform) {
+def validateResults(platform, omsVersion) {
 
   sh """
   cd OMSimulator/testsuite/fmi-cross-check
-  python3 validateResults.py fmi-cross-check ${platform} ${omsVersion}}
+  python3 validateResults.py fmi-cross-check "${platform}" "${omsVersion}"
   """
 }
 
