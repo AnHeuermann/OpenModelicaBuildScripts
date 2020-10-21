@@ -150,9 +150,9 @@ pipeline {
           environment {
             String testFMUPlatform = 'win64'
             String omsPlatform = 'mingw64'
-            String os = "Ubuntu 18.04 LTS with Wine 64bit"
+            String os = "Ubuntu 18.04 LTS with Wine 64bit using MINGW64 OMSimulator"
             String buildDate = sh(script: "echo `date '+%y-%m-%d %H:%M'`", returnStdout: true).trim()
-            String omsCall = "wine64" + "${env.WORKSPACE}" + "/OMSimulatorBinaries/OMSimulator-${omsPlatform}/bin/OMSimulator.exe"
+            String omsCall = "wine64 " + "${env.WORKSPACE}" + "/OMSimulatorBinaries/OMSimulator-${omsPlatform}/bin/OMSimulator.exe"
           }
           steps {
             installOMSArtifactsUnix(omsPlatform)
@@ -273,22 +273,23 @@ def runFmiCrossCheck(platform, omsimulator) {
   sh """
   $omsimulator --version
   cd OMSimulator/testsuite/fmi-cross-check
-  python3 importFMUs.py fmi-cross-check "${platform}" "${omsimulator}"
+  python3 importFMUs.py fmi-cross-check \"${platform}\" \"${omsimulator}\"
   """
 }
 
 def validateResults(platform, omsVersion) {
-
+  echo "Validate Results"
   sh """
   cd OMSimulator/testsuite/fmi-cross-check
-  python3 validateResults.py fmi-cross-check "${platform}" "${omsVersion}"
+  python3 validateResults.py fmi-cross-check \"${platform}\" \"${omsVersion}\"
   """
 }
 
 def generateHTML(omsVersionShort, omsVersion, platform, os, startTime, durationInSec) {
-
+  echo "Generate Result Overview HTML"
+  echo ""
   sh """
   cd OMSimulator/testsuite/fmi-cross-check
-  python3 generateHTML.py fmi-cross-check ${platform} ${omsVersionShort} ${omsVersion} ${os} ${startTime} ${durationInSec}\n"
+  python3 generateHTML.py fmi-cross-check \"${platform}\" \"${omsVersion}\" \"${omsVersionShort}\" \"${os}\" \"${startTime}\" \"${durationInSec}\"
   """
 }
