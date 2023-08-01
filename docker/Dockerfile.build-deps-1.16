@@ -9,7 +9,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN sed -i s,http://archive.ubuntu.com/ubuntu/,mirror://mirrors.ubuntu.com/mirrors.txt, /etc/apt/sources.list \
     && apt-get update && apt-get upgrade -qy && apt-get dist-upgrade -qy
 RUN apt-get install -qy \
-      gnupg wget ca-certificates apt-transport-https devscripts equivs python3-pip python-pip libmldbm-perl \
+      gnupg wget ca-certificates apt-transport-https
+RUN apt-get install -qy \
+      devscripts equivs python3-pip python-pip libmldbm-perl \
       docker.io sudo git subversion texlive-base texlive-latex-extra latexmk gnuplot-nox doxygen \
       poppler-utils flex libgfortran3 aspell bibtex2html zip unzip ocl-icd-opencl-dev cpio xsltproc inkscape \
       g++-4.8 g++-5 g++-6 g++-7 texlive-lang-greek xvfb libcurl4-gnutls-dev

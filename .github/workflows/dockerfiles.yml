@@ -17,5 +17,5 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: build-deps
+      - name: Build build-deps Docker images
         run: make -C docker/ latest DOCKER_BUILD_ARGS="--pull --no-cache"
