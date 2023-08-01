@@ -1,0 +1,21 @@
+name: Docker build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+    # Trigger manually
+
+jobs:
+  build-dockerfiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build build-deps Docker images
+        run: make -C docker/ latest DOCKER_BUILD_ARGS="--pull --no-cache"

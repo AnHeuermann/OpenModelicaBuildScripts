@@ -1,3 +1,5 @@
+[![Docker build](https://github.com/OpenModelica/OpenModelicaBuildScripts/actions/workflows/dockerfiles.yml/badge.svg)](https://github.com/OpenModelica/OpenModelicaBuildScripts/actions/workflows/dockerfiles.yml)
+
 # OpenModelicaBuildScripts
 
 

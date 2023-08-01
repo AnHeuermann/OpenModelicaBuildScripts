@@ -1,0 +1,37 @@
+name: Publish Docker images to docker.openmodelica.org
+
+on:
+  # Trigger only manually
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Space seperated list of tags to publish'
+        required: true
+        type: string
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to docker.openmodelica.org
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a  # SHA is equal to "v2", but not changeable
+        with:
+          registry: docker.openmodelica.org
+          # TODO: Use access tokens instead of password!
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build build-deps Docker images
+        run: make -C docker/ latest DOCKER_BUILD_ARGS="--pull --no-cache"
+
+      - name: Push Docker images
+        run: |
+          for tag in ${{ github.event.inputs.tags }};
+          do
+            echo "Publishing $tag"
+            docker push $tag
+          done
